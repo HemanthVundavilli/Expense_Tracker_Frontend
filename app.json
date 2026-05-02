@@ -1,22 +1,32 @@
 {
   "expo": {
-    "name": "Namrath's Expense Tracker",
+    "name": "Expense Tracker",
     "slug": "expense-tracker",
+    "platforms": [
+      "android",
+      "web"
+    ],
     "version": "1.0.0",
-
     "icon": "./assets/exp.png",
-
     "splash": {
       "image": "./assets/exp.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/exp.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.hemu2503.expensetracker"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4f9073a0-5709-4505-bb34-7f021cddb222"
       }
-    }
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
   }
 }

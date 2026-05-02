@@ -10,39 +10,14 @@ import {
   RefreshControl
 } from "react-native";
 
-import { Picker } from "@react-native-picker/picker";
+import { getExpenses } from "../services/api";
 
 import ExpenseItem from "../components/ExpenseItem";
 import ExpenseForm from "../components/ExpenseForm";
 
-import { getExpenses } from "../services/api";
-
 import { COLORS } from "../constants/styles";
 
-const months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December"
-];
-
-export default function MonthlyExpensesScreen() {
-
-  const currentDate = new Date();
-
-  const [selectedMonth, setSelectedMonth] =
-    useState(currentDate.getMonth());
-
-  const [selectedYear, setSelectedYear] =
-    useState(currentDate.getFullYear());
+export default function WeeklyExpensesScreen() {
 
   const [data, setData] = useState([]);
 
@@ -57,30 +32,30 @@ export default function MonthlyExpensesScreen() {
 
   useEffect(() => {
     fetchData();
-  }, [selectedMonth, selectedYear]);
+  }, []);
 
   const fetchData = async () => {
 
-    try {
+    const res = await getExpenses();
 
-      const res = await getExpenses();
+    const today = new Date();
 
-      const filtered =
-        res.data.filter((item) => {
+    const weekAgo = new Date();
 
-          const d = new Date(item.date);
+    weekAgo.setDate(
+      today.getDate() - 7
+    );
 
-          return (
-            d.getMonth() === selectedMonth &&
-            d.getFullYear() === selectedYear
-          );
-        });
+    const filtered =
+      res.data.filter((item) => {
 
-      setData(filtered);
+        const d =
+          new Date(item.date);
 
-    } catch (err) {
-      console.log(err);
-    }
+        return d >= weekAgo;
+      });
+
+    setData(filtered);
   };
 
   const onRefresh = async () => {
@@ -97,73 +72,14 @@ export default function MonthlyExpensesScreen() {
     0
   );
 
-  const years = [];
-
-  for (let i = 2023; i <= 2035; i++) {
-    years.push(i);
-  }
-
   return (
 
     <View style={styles.container}>
 
-      {/* SELECTORS */}
-      <View style={styles.selectorRow}>
-
-        {/* MONTH */}
-        <View style={styles.dropdown}>
-
-          <Picker
-            selectedValue={selectedMonth}
-            onValueChange={(value) =>
-              setSelectedMonth(value)
-            }
-          >
-
-            {months.map((month, index) => (
-
-              <Picker.Item
-                key={index}
-                label={month}
-                value={index}
-              />
-            ))}
-
-          </Picker>
-
-        </View>
-
-        {/* YEAR */}
-        <View style={styles.dropdown}>
-
-          <Picker
-            selectedValue={selectedYear}
-            onValueChange={(value) =>
-              setSelectedYear(value)
-            }
-          >
-
-            {years.map((year) => (
-
-              <Picker.Item
-                key={year}
-                label={year.toString()}
-                value={year}
-              />
-            ))}
-
-          </Picker>
-
-        </View>
-
-      </View>
-
-      {/* TOTAL */}
       <Text style={styles.total}>
-        Monthly Total: ₹ {total}
+        Weekly Total: ₹ {total}
       </Text>
 
-      {/* LIST */}
       <FlatList
         data={data}
         keyExtractor={(item) => item._id}
@@ -226,11 +142,9 @@ export default function MonthlyExpensesScreen() {
                 setSelected(null);
               }}
             >
-
               <Text style={styles.closeText}>
                 Close
               </Text>
-
             </TouchableOpacity>
 
           </View>
@@ -250,24 +164,10 @@ const styles = StyleSheet.create({
     padding: 16
   },
 
-  selectorRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 15
-  },
-
-  dropdown: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    marginHorizontal: 5,
-    overflow: "hidden"
-  },
-
   total: {
     fontSize: 18,
     color: COLORS.primary,
-    marginBottom: 15,
+    marginBottom: 10,
     fontWeight: "bold"
   },
 
@@ -295,8 +195,7 @@ const styles = StyleSheet.create({
 
   closeText: {
     color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16
+    fontWeight: "bold"
   }
 
 });

@@ -1,107 +1,245 @@
 import React from "react";
+
 import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet
+  StyleSheet,
+  Alert
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { deleteExpense } from "../services/api";
-import { COLORS, SIZES } from "../constants/styles";
 
-export default function ExpenseItem({ item, refresh, onEdit }) {
-  const handleDelete = async () => {
-    try {
-      await deleteExpense(item._id);
-      refresh();
-    } catch (err) {
-      console.log("Delete Error:", err);
-    }
+import { Ionicons } from "@expo/vector-icons";
+
+import { deleteExpense } from "../services/api";
+
+import {
+  COLORS,
+  SIZES
+} from "../constants/styles";
+
+export default function ExpenseItem({
+  item,
+  refresh,
+  onEdit
+}) {
+
+  // DELETE WITH CONFIRMATION
+  const handleDelete = () => {
+
+    Alert.alert(
+      "Delete Expense",
+      "Are you sure you want to delete this expense?",
+      [
+
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+
+        {
+          text: "Delete",
+
+          style: "destructive",
+
+          onPress: async () => {
+
+            try {
+
+              await deleteExpense(
+                item._id
+              );
+
+              Alert.alert(
+                "Deleted",
+                "Expense Deleted Successfully"
+              );
+
+              if (refresh) {
+                refresh();
+              }
+
+            } catch (err) {
+
+              console.log(err);
+
+              Alert.alert(
+                "Error",
+                "Delete failed"
+              );
+            }
+          }
+        }
+      ]
+    );
   };
 
-  // Category icon mapping
+  // CATEGORY ICONS
   const getIcon = (category) => {
-    switch (category?.toLowerCase()) {
+
+    switch (
+      category?.toLowerCase()
+    ) {
+
       case "food":
         return "fast-food";
+
       case "travel":
         return "car";
+
       case "shopping":
         return "cart";
+
       case "bills":
         return "document-text";
+
       default:
         return "wallet";
     }
   };
 
   return (
+
     <View style={styles.card}>
+
       {/* LEFT */}
       <View style={styles.left}>
+
         <Ionicons
           name={getIcon(item.category)}
           size={26}
           color={COLORS.primary}
         />
 
-        <View style={{ marginLeft: 10 }}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.category}>{item.category}</Text>
+        <View style={styles.textContainer}>
+
+          {/* NAME */}
+          <Text style={styles.name}>
+            {item.name}
+          </Text>
+
+          {/* CATEGORY */}
+          <Text style={styles.category}>
+            {item.category}
+          </Text>
+
+          {/* DATE */}
+          <Text style={styles.date}>
+            {new Date(
+              item.date
+            ).toDateString()}
+          </Text>
+
         </View>
+
       </View>
 
       {/* RIGHT */}
       <View style={styles.right}>
-        <Text style={styles.amount}>₹ {item.amount}</Text>
 
+        {/* AMOUNT */}
+        <Text style={styles.amount}>
+          ₹ {item.amount}
+        </Text>
+
+        {/* ACTION BUTTONS */}
         <View style={styles.actions}>
-          <TouchableOpacity onPress={() => onEdit(item)}>
-            <Ionicons name="create-outline" size={20} color="green" />
+
+          {/* EDIT */}
+          <TouchableOpacity
+            onPress={() =>
+              onEdit(item)
+            }
+          >
+
+            <Ionicons
+              name="create-outline"
+              size={22}
+              color="green"
+            />
+
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleDelete}>
-            <Ionicons name="trash" size={20} color={COLORS.danger} />
+          {/* DELETE */}
+          <TouchableOpacity
+            onPress={handleDelete}
+          >
+
+            <Ionicons
+              name="trash"
+              size={22}
+              color={COLORS.danger}
+            />
+
           </TouchableOpacity>
+
         </View>
+
       </View>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+
   card: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+
     backgroundColor: COLORS.card,
+
     padding: SIZES.padding,
+
     borderRadius: SIZES.radius,
-    marginBottom: 10,
-    elevation: 2
+
+    marginBottom: 12,
+
+    elevation: 3
   },
+
   left: {
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
+
+    flex: 1
   },
+
+  textContainer: {
+    marginLeft: 10
+  },
+
   name: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     color: COLORS.text
   },
+
   category: {
     fontSize: 13,
-    color: COLORS.subtext
+    color: COLORS.subtext,
+    marginTop: 2
   },
+
+  date: {
+    fontSize: 12,
+    color: "#888",
+    marginTop: 2
+  },
+
   right: {
     alignItems: "flex-end"
   },
+
   amount: {
     fontWeight: "bold",
-    marginBottom: 5
+    fontSize: 16,
+    marginBottom: 8,
+    color: COLORS.primary
   },
+
   actions: {
     flexDirection: "row",
-    gap: 12
+    gap: 14
   }
 });

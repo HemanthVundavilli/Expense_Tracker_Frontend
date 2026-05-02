@@ -1,26 +1,47 @@
 import axios from "axios";
 
-// 🔥 Replace with your system IP
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 const API = axios.create({
   baseURL: "https://expense-tracker-backenddd.onrender.com/api"
 });
 
-// Add Expense
-export const addExpense = async (data) => {
-  return await API.post("/add", data);
-};
+API.interceptors.request.use(
+  async (req) => {
 
-// Get All Expenses
-export const getExpenses = async () => {
-  return await API.get("/");
-};
+    const token =
+      await AsyncStorage.getItem("token");
 
-// Delete Expense
-export const deleteExpense = async (id) => {
-  return await API.delete(`/${id}`);
-};
+    if (token) {
+      req.headers.authorization = token;
+    }
 
-// Update Expense
-export const updateExpense = async (id, data) => {
-  return await API.put(`/${id}`, data);
-};
+    return req;
+  }
+);
+
+export const registerUser = (data) =>
+  API.post("/auth/register", data);
+
+export const loginUser = (data) =>
+  API.post("/auth/login", data);
+
+export const getProfile = () =>
+  API.get("/auth/profile");
+
+export const updateProfile = (data) =>
+  API.put("/auth/profile", data);
+
+export const addExpense = (data) =>
+  API.post("/expenses/add", data);
+
+export const getExpenses = () =>
+  API.get("/expenses");
+
+export const deleteExpense = (id) =>
+  API.delete(`/expenses/${id}`);
+
+export const updateExpense = (id, data) =>
+  API.put(`/expenses/${id}`, data);
+
+export default API;

@@ -4,13 +4,13 @@ import {
   View,
   FlatList,
   Text,
+  TouchableOpacity,
   StyleSheet,
   Modal,
-  TouchableOpacity,
   RefreshControl
 } from "react-native";
 
-import { Picker } from "@react-native-picker/picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 import ExpenseItem from "../components/ExpenseItem";
 import ExpenseForm from "../components/ExpenseForm";
@@ -19,30 +19,13 @@ import { getExpenses } from "../services/api";
 
 import { COLORS } from "../constants/styles";
 
-const months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December"
-];
+export default function DateExpensesScreen() {
 
-export default function MonthlyExpensesScreen() {
+  const [selectedDate, setSelectedDate] =
+    useState(new Date());
 
-  const currentDate = new Date();
-
-  const [selectedMonth, setSelectedMonth] =
-    useState(currentDate.getMonth());
-
-  const [selectedYear, setSelectedYear] =
-    useState(currentDate.getFullYear());
+  const [showPicker, setShowPicker] =
+    useState(false);
 
   const [data, setData] = useState([]);
 
@@ -57,7 +40,7 @@ export default function MonthlyExpensesScreen() {
 
   useEffect(() => {
     fetchData();
-  }, [selectedMonth, selectedYear]);
+  }, [selectedDate]);
 
   const fetchData = async () => {
 
@@ -66,19 +49,17 @@ export default function MonthlyExpensesScreen() {
       const res = await getExpenses();
 
       const filtered =
-        res.data.filter((item) => {
-
-          const d = new Date(item.date);
-
-          return (
-            d.getMonth() === selectedMonth &&
-            d.getFullYear() === selectedYear
-          );
-        });
+        res.data.filter(
+          (item) =>
+            new Date(item.date)
+              .toDateString() ===
+            selectedDate.toDateString()
+        );
 
       setData(filtered);
 
     } catch (err) {
+
       console.log(err);
     }
   };
@@ -97,73 +78,41 @@ export default function MonthlyExpensesScreen() {
     0
   );
 
-  const years = [];
-
-  for (let i = 2023; i <= 2035; i++) {
-    years.push(i);
-  }
-
   return (
 
     <View style={styles.container}>
 
-      {/* SELECTORS */}
-      <View style={styles.selectorRow}>
+      <TouchableOpacity
+        style={styles.dateBtn}
+        onPress={() =>
+          setShowPicker(true)
+        }
+      >
+        <Text style={styles.dateText}>
+          {selectedDate.toDateString()}
+        </Text>
+      </TouchableOpacity>
 
-        {/* MONTH */}
-        <View style={styles.dropdown}>
+      {showPicker && (
 
-          <Picker
-            selectedValue={selectedMonth}
-            onValueChange={(value) =>
-              setSelectedMonth(value)
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          onChange={(event, date) => {
+
+            setShowPicker(false);
+
+            if (date) {
+              setSelectedDate(date);
             }
-          >
+          }}
+        />
+      )}
 
-            {months.map((month, index) => (
-
-              <Picker.Item
-                key={index}
-                label={month}
-                value={index}
-              />
-            ))}
-
-          </Picker>
-
-        </View>
-
-        {/* YEAR */}
-        <View style={styles.dropdown}>
-
-          <Picker
-            selectedValue={selectedYear}
-            onValueChange={(value) =>
-              setSelectedYear(value)
-            }
-          >
-
-            {years.map((year) => (
-
-              <Picker.Item
-                key={year}
-                label={year.toString()}
-                value={year}
-              />
-            ))}
-
-          </Picker>
-
-        </View>
-
-      </View>
-
-      {/* TOTAL */}
       <Text style={styles.total}>
-        Monthly Total: ₹ {total}
+        Total: ₹ {total}
       </Text>
 
-      {/* LIST */}
       <FlatList
         data={data}
         keyExtractor={(item) => item._id}
@@ -226,11 +175,9 @@ export default function MonthlyExpensesScreen() {
                 setSelected(null);
               }}
             >
-
               <Text style={styles.closeText}>
                 Close
               </Text>
-
             </TouchableOpacity>
 
           </View>
@@ -250,24 +197,22 @@ const styles = StyleSheet.create({
     padding: 16
   },
 
-  selectorRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  dateBtn: {
+    backgroundColor: "#f5f5f5",
+    padding: 14,
+    borderRadius: 12,
     marginBottom: 15
   },
 
-  dropdown: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    marginHorizontal: 5,
-    overflow: "hidden"
+  dateText: {
+    fontSize: 16,
+    color: "#222"
   },
 
   total: {
     fontSize: 18,
     color: COLORS.primary,
-    marginBottom: 15,
+    marginBottom: 10,
     fontWeight: "bold"
   },
 

@@ -1,71 +1,152 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+
 import {
   View,
   TextInput,
   TouchableOpacity,
   Text,
-  StyleSheet
+  StyleSheet,
+  Platform,
+  Alert
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { addExpense, updateExpense } from "../services/api";
-import { COLORS, SIZES } from "../constants/styles";
 
-export default function ExpenseForm({ refresh, selected, clearSelection }) {
+import DateTimePicker from "@react-native-community/datetimepicker";
+
+import { Ionicons } from "@expo/vector-icons";
+
+import {
+  addExpense,
+  updateExpense
+} from "../services/api";
+
+import { COLORS } from "../constants/styles";
+
+export default function ExpenseForm({
+  refresh,
+  selected,
+  clearSelection
+}) {
+
   const [name, setName] = useState("");
+
   const [amount, setAmount] = useState("");
+
   const [category, setCategory] = useState("");
 
-  // Fill form when editing
+  const [date, setDate] =
+    useState(new Date());
+
+  const [showPicker, setShowPicker] =
+    useState(false);
+
   useEffect(() => {
+
     if (selected) {
-      setName(selected.name || "");
-      setAmount(selected.amount ? selected.amount.toString() : "");
-      setCategory(selected.category || "");
+
+      setName(selected.name);
+
+      setAmount(
+        selected.amount.toString()
+      );
+
+      setCategory(selected.category);
+
+      setDate(
+        new Date(selected.date)
+      );
     }
+
   }, [selected]);
 
   const handleSubmit = async () => {
-    if (!name || !amount) {
-      alert("Enter name and amount");
+
+    if (!name || !amount || !category) {
+
+      Alert.alert(
+        "Error",
+        "Please fill all fields"
+      );
+
       return;
     }
 
+    const expenseData = {
+      name,
+      amount: Number(amount),
+      category,
+      date
+    };
+
     try {
-      if (selected && selected._id) {
-        // UPDATE
-        await updateExpense(selected._id, {
-          name,
-          amount: Number(amount),
-          category: category || "Other"
-        });
-      } else {
-        // ADD
-        await addExpense({
-          name,
-          amount: Number(amount),
-          category: category || "Other",
-          date: new Date()
-        });
+
+      // UPDATE
+      if (selected) {
+
+        await updateExpense(
+          selected._id,
+          expenseData
+        );
+
+        Alert.alert(
+          "Success",
+          "Expense Updated Successfully"
+        );
+
+        if (clearSelection) {
+          clearSelection();
+        }
+
       }
 
-      // Reset
+      // ADD
+      else {
+
+        await addExpense(
+          expenseData
+        );
+
+        Alert.alert(
+          "Success",
+          "Expense Added Successfully"
+        );
+      }
+
+      // RESET FIELDS
       setName("");
       setAmount("");
       setCategory("");
+      setDate(new Date());
 
-      refresh && refresh();
-      clearSelection && clearSelection(); // closes modal
+      // REFRESH
+      if (refresh) {
+        refresh();
+      }
+
     } catch (err) {
+
       console.log(err);
+
+      Alert.alert(
+        "Error",
+        "Something went wrong"
+      );
     }
   };
 
   return (
+
     <View style={styles.card}>
-      <Text style={styles.title}>
-        {selected ? "Edit Expense" : "Add Expense"}
+
+      {/* HEADING */}
+      <Text style={styles.heading}>
+
+        {selected
+          ? "Edit Expense"
+          : "Add Expense"}
+
       </Text>
 
+      {/* NAME */}
       <TextInput
         placeholder="Expense Name"
         value={name}
@@ -73,6 +154,7 @@ export default function ExpenseForm({ refresh, selected, clearSelection }) {
         style={styles.input}
       />
 
+      {/* AMOUNT */}
       <TextInput
         placeholder="Amount (₹)"
         value={amount}
@@ -81,78 +163,142 @@ export default function ExpenseForm({ refresh, selected, clearSelection }) {
         style={styles.input}
       />
 
+      {/* CATEGORY */}
       <TextInput
-        placeholder="Category (Food, Travel...)"
+        placeholder="Category"
         value={category}
         onChangeText={setCategory}
         style={styles.input}
       />
 
-      {/* UPDATE / ADD */}
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Ionicons name="checkmark-circle" size={20} color="#fff" />
-        <Text style={styles.buttonText}>
-          {selected ? "Update Expense" : "Add Expense"}
+      {/* DATE BUTTON */}
+      <TouchableOpacity
+        style={styles.dateBtn}
+        onPress={() =>
+          setShowPicker(true)
+        }
+      >
+
+        <Ionicons
+          name="calendar-outline"
+          size={20}
+          color={COLORS.primary}
+        />
+
+        <Text style={styles.dateText}>
+          {date.toDateString()}
         </Text>
+
       </TouchableOpacity>
 
-      {/* CANCEL */}
-      {selected && (
-        <TouchableOpacity
-          onPress={() => {
-            setName("");
-            setAmount("");
-            setCategory("");
-            clearSelection(); // closes modal
+      {/* DATE PICKER */}
+      {showPicker && (
+
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display={
+            Platform.OS === "ios"
+              ? "spinner"
+              : "default"
+          }
+          onChange={(
+            event,
+            selectedDate
+          ) => {
+
+            setShowPicker(false);
+
+            if (selectedDate) {
+              setDate(selectedDate);
+            }
           }}
-          style={styles.cancelBtn}
-        >
-          <Text style={styles.cancelText}>Cancel Edit</Text>
-        </TouchableOpacity>
+        />
       )}
+
+      {/* BUTTON */}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleSubmit}
+      >
+
+        <Ionicons
+          name={
+            selected
+              ? "create-outline"
+              : "checkmark-circle"
+          }
+          size={22}
+          color="#fff"
+        />
+
+        <Text style={styles.buttonText}>
+
+          {selected
+            ? "Update Expense"
+            : "Add Expense"}
+
+        </Text>
+
+      </TouchableOpacity>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+
   card: {
-    backgroundColor: COLORS.card,
-    padding: SIZES.padding,
-    borderRadius: SIZES.radius,
-    marginTop: 10,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 20,
     elevation: 3
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10
+
+  heading: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 16,
+    color: "#222"
   },
+
   input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    marginBottom: 14
   },
+
+  dateBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 16
+  },
+
+  dateText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: "#333"
+  },
+
   button: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    padding: 15,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: COLORS.primary,
-    padding: 14,
-    borderRadius: 8
+    gap: 10
   },
+
   buttonText: {
     color: "#fff",
-    fontWeight: "bold",
-    marginLeft: 6
-  },
-  cancelBtn: {
-    marginTop: 10,
-    alignItems: "center"
-  },
-  cancelText: {
-    color: COLORS.danger,
+    fontSize: 17,
     fontWeight: "600"
   }
 });
